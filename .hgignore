@@ -1,0 +1,7 @@
+syntax: glob
+*.swp
+node_modules/*
+doc/*
+build/*
+dist/*
+package-lock.json
