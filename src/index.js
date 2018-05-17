@@ -15,7 +15,6 @@ var dotScap = {};
 								lastTag: false,
 								omitSpecialPassages: true,
 								omitTags: [],
-								rotation: "TB",
 								showNodeNames: false,
 								trace: "",
 								palette: ["#FEAF16", "#2ED9FF", "#DEA0FD", "#FE00FA", "#F7E1A0",
@@ -569,7 +568,6 @@ context.settings = (function () {
 		config.display = document.getElementById("displayCheckbox") ? document.getElementById("displayCheckbox").checked : true;
 		config.ends = document.getElementById("endsCheckbox") ? document.getElementById("endsCheckbox").checked : false;
 		config.omitSpecialPassages = document.getElementById("specialCheckbox") ? document.getElementById("specialCheckbox").checked : false;
-		config.rotation = document.querySelector("input[name='rotateCheckbox']:checked") ? document.querySelector("input[name='rotateCheckbox']:checked").value : "TB";
 		config.showNodeNames = document.getElementById("nodeCheckbox0") ? document.getElementById("nodeCheckbox0").checked : false;
 		config.omitTags = document.getElementById("omitTags") ? splitAndTrim(document.getElementById("omitTags").value) : [];
 		config.lastTag = document.getElementById("lastTagCheckbox") ? document.getElementById("lastTagCheckbox").checked : false;
@@ -579,24 +577,20 @@ context.settings = (function () {
 			
 	function write() {
 		//Write the current config object as a settings panel.
-		var output = _.template('<input type="radio" id="nodeCheckbox0" name="nodeCheckbox" value="names" <%= (showNodeNames ? "checked" : "") %>/><label for="nodeCheckbox">&nbsp;Passage titles</label> \
+		var output = _.template('X: <input type="radio" id="nodeCheckbox0" name="nodeCheckbox" value="names" <%= (showNodeNames ? "checked" : "") %>/><label for="nodeCheckbox">&nbsp;Passage titles</label> \
 			<input type="radio" id="nodeCheckbox1" name="nodeCheckbox" value="pid"  <%= (showNodeNames ? "" : "checked") %> /><label for="nodeCheckbox">&nbsp;Passage ids (hover for title)</label> \
-			<input type="radio" id="colorCheckbox0" name="colorCheckbox" value="bw" <%= (color == "bw" ? "checked" : "")%> />&nbsp;<label for="colorCheckbox0">Black & white</label> \
+			&nbsp; X: <input type="radio" id="colorCheckbox0" name="colorCheckbox" value="bw" <%= (color == "bw" ? "checked" : "")%> />&nbsp;<label for="colorCheckbox0">Black & white</label> \
 			<input type="radio" id="colorCheckbox1" name="colorCheckbox" value="length" <%= (color == "length" ? "checked" : "")%> />&nbsp;<label for="colorCheckbox1">Color by node length</label> \
 			<input type="radio" id="colorCheckbox2" name="colorCheckbox" value="tag" <%= (color == "tag" ? "checked" : "")%>/>&nbsp;<label for="colorCheckbox2">Color by tag</label><br/> \
 			<input type="checkbox" id="displayCheckbox" name="displayCheckbox" checked/>&nbsp;<label for="displayCheckbox">Include display macro links</label> \
-			<input type="checkbox" id="wcCheckbox" name="wcCheckbox" <%= (countWords ? "checked" : "") %> />&nbsp;<label for="wcCheckbox">Include word counts (hover)</label><br/> \
+			X: <input type="checkbox" id="wcCheckbox" name="wcCheckbox" <%= (countWords ? "checked" : "") %> />&nbsp;<label for="wcCheckbox">Include word counts (hover)</label><br/> \
 			<input type="checkbox" id="specialCheckbox" <%= (omitSpecialPassages ? "checked" : "") %> />&nbsp;<label for="specialCheckbox">Omit&nbsp;special&nbsp;passages</label> (StoryAuthor,&nbsp;StorySubtitle,&nbsp;etc.)<br/> \
 			<input type="radio" id="omitTagsFakeRadioButton" disabled/>&nbsp;<label for="omitTags">Omit by tag(s):</label>&nbsp;<input type="input" id="omitTags" placeholder="Separate tags with commas." value="<%=omitTags.join(" ")%>"/><br/> \
-			<input type="checkbox" id="checkpointsCheckbox" <%= (checkpoint ? "checked" : "") %> />&nbsp;<label for="checkpointsCheckbox">Detect checkpoint tags</label> \
-			<input type="checkbox" id="endsCheckbox" <%= (ends == true ? "checked" : "") %>/>&nbsp;<label for="endsCheckbox">Detect end tags</label> \
+			X: <input type="checkbox" id="checkpointsCheckbox" <%= (checkpoint ? "checked" : "") %> />&nbsp;<label for="checkpointsCheckbox">Detect checkpoint tags</label> \
+			X: <input type="checkbox" id="endsCheckbox" <%= (ends == true ? "checked" : "") %>/>&nbsp;<label for="endsCheckbox">Detect end tags</label> \
 			<input type="checkbox" id="lastTagCheckbox" <%= (lastTag ? "checked" : "") %> />&nbsp;<label for="lastTagCheckbox">Use last tag</label><br/> \
-			<input type="checkbox" id="clusterCheckbox" <%= (cluster ? "checked" : "") %> />&nbsp;<label for="clusterCheckbox">Cluster by tags</label> \
-			<input type="radio" id="traceFakeRadioButton" disabled/>&nbsp;<label for="trace">Trace phrase:</label>&nbsp;<input type="input" id="trace" value="<%=trace%>" /><br/> \
-			<input type="radio" id="rotateCheckbox0" name="rotateCheckbox" value="TB" <%= (rotation == "TB" ? "checked" : "")%> />&nbsp;<label for="rotateCheckbox0" title="Top to bottom">&darr;</label> \
-			<input type="radio" id="rotateCheckbox1" name="rotateCheckbox" value="LR" <%= (rotation == "LR" ? "checked" : "")%> />&nbsp;<label for="rotateCheckbox1" title="Left to right">&rarr;</label> \
-			<input type="radio" id="rotateCheckbox2" name="rotateCheckbox" value="BT" <%= (rotation == "BT" ? "checked" : "")%> />&nbsp;<label for="rotateCheckbox2" title="Bottom to top">&uarr;</label> \
-			<input type="radio" id="rotateCheckbox3" name="rotateCheckbox" value="RL" <%= (rotation == "RL" ? "checked" : "")%> />&nbsp;<label for="rotateCheckbox3" title="Right to left">&larr;</label> \
+			X: <input type="checkbox" id="clusterCheckbox" <%= (cluster ? "checked" : "") %> />&nbsp;<label for="clusterCheckbox">Cluster by tags</label> \
+			X: <input type="radio" id="traceFakeRadioButton" disabled/>&nbsp;<label for="trace">Trace phrase:</label>&nbsp;<input type="input" id="trace" value="<%=trace%>" /><br/> \
 			<br/>');
 		document.getElementById("settingsForm").innerHTML = output(config);
 	}
