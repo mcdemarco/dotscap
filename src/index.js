@@ -1,5 +1,6 @@
 var filesaver = require("filesaver.js-npm");
 var _ = require("underscore");
+var uuidv3 = require('uuid/v3');
 var dotScap = {};
 
 (function(context) { 
@@ -156,20 +157,22 @@ context.graph = (function() {
       <LeftToRight>Yes</LeftToRight>\n\
    </UISettings>\n\
    <PrintSettings VerticalPagination="Auto" HorizontalPagination="Clip" Orientation="Portrait" RightMargin="12.000000" BottomMargin="12.000000" HorizontallyCentered="Yes" ScaleFactor="1.000000" PagesAcross="1" PaperType="na-letter" PagesDown="1" TopMargin="12.000000" Collates="Yes" PaperSize="-1.000000,-1.000000" LeftMargin="12.000000" VerticallyCentered="Yes"/>');
-		
+		buffer.push("</ScappleDocument>");
+
 		return buffer.join("\n");
 	}
 
 	function generateUUID() {
-		//ToDo.
-		return "659F6C04-7CA6-4052-8D89-7C9D490818B1";
+		//Using the URL version:
+		return uuidv3('http://mcdemarco.net/tools/scree/dotscap', uuidv3.URL);
+		//return "659F6C04-7CA6-4052-8D89-7C9D490818B1";
 	}
 
 	function getAppearanceString() {
 		return '<Appearance>\n\
-			<Alignment>Left</Alignment>\n\
-			<Fill>0.901961 0.901961 0.901961</Fill>\n\
-			<Border Weight="1" Style="Rounded">0.0 0.0 0.0</Border>\n\
+			<Alignment>Center</Alignment>\n\
+			<Border Weight="1" Style="Rounded">0.26949 0.164034 0.186694</Border>\n\
+			<Fill>0.934157 0.888319 0.78529</Fill>\n\
 		</Appearance>';
 	}
 
