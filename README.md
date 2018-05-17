@@ -21,6 +21,10 @@ Your Scapple file should be laid out in exactly the same order as it is in the T
 
 ## Versions
 
+### 1.0.1
+
+Implement more lingering DotGraph functionality.
+
 ### 1.0.0
 
 Initial version.

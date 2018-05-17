@@ -8,7 +8,7 @@ var dotScap = {};
 	var config = {checkpoint: true,
 								checkpointTag: "checkpoint",
 								cluster: false,
-								color: "length",
+								color: "bw",
 								countWords: true,
 								display: true,
 								ends: true,
@@ -16,7 +16,7 @@ var dotScap = {};
 								lastTag: false,
 								omitSpecialPassages: true,
 								omitTags: [],
-								showNodeNames: false,
+								showNodeNames: true,
 								trace: "",
 								palette: ["#FEAF16", "#2ED9FF", "#DEA0FD", "#FE00FA", "#F7E1A0",
 													"#16FF32", "#3283FE", "#1C8356", "#FBE426", "#FA0087",
@@ -88,6 +88,22 @@ context.graph = (function() {
  	}
 
 	//Private
+	function convertHexColor(hexString) {
+		//Reformat existing colors to Scapple's format (RGB percentages)
+		//Assumes a #.
+		hexString = hexString.split("#")[1];
+		var R, G, B;
+		R = convertHexFragment(hexString.substring(0,2));
+		G = convertHexFragment(hexString.substring(2,4));
+		B = convertHexFragment(hexString.substring(4,6));
+		return R + " " + G + " " + B;
+	}
+
+	//Private
+	function convertHexFragment(hexFragment) {
+		return parseInt(hexFragment,16) / 255;
+	}
+
 	function dot() {
 		//(Re)parse the story into the scapple xml format.
 		var buffer = [];
@@ -100,15 +116,6 @@ context.graph = (function() {
 		buffer.push('<ScappleDocument ID="' + generateUUID() + '" Version="1.1">');
 		
 		buffer.push('<Notes>');
-
-		/*Optionally add a canonical pre-start node.
-		buffer.push('<Note Width="82.5928" FontSize="16" ID="0" Position="0,0">');
-    buffer.push(getAppearanceString());
-    buffer.push('<String>Start</String>');
-    buffer.push('<ConnectedNoteIDs>' + storyObj.startNode + '</ConnectedNoteIDs>');
-    buffer.push('<PointsToNoteIDs>' + storyObj.startNode + '</PointsToNoteIDs>');
-    buffer.push('</Note>');
-		*/
 
 		//The main part of the graph is the passage graphing, including links.
 		buffer = buffer.concat(passages());
@@ -168,11 +175,14 @@ context.graph = (function() {
 		//return "659F6C04-7CA6-4052-8D89-7C9D490818B1";
 	}
 
-	function getAppearanceString() {
+	function getAppearanceString(color, weight) {
+		if (!color) color = "0.934157 0.888319 0.78529";
+		if (!weight) weight = 1;
+
 		return '<Appearance>\n\
 			<Alignment>Center</Alignment>\n\
-			<Border Weight="1" Style="Rounded">0.26949 0.164034 0.186694</Border>\n\
-			<Fill>0.934157 0.888319 0.78529</Fill>\n\
+			<Border Weight="' + weight + '" Style="Rounded">0.0 0.0 0.0</Border>\n\
+			<Fill>' + color + '</Fill>\n\
 		</Appearance>';
 	}
 
@@ -235,9 +245,9 @@ context.graph = (function() {
 		var links = _.uniq(passage.links.map(function(link) {return getPidFromTarget(link[0]);}));
 		
 		//Push the node.
-		result.push('<Note Width="' + (passage.name.length * 8 + 20) + '" FontSize="16" ID="' + passage.pid + '" Position="' + passage.position +'">');
-    result.push(getAppearanceString());
-    result.push('<String>' + passage.name + '</String>');
+		result.push('<Note Width="' + (scrubbedNameOrPid.length * 8 + 20) + '" FontSize="16" ID="' + passage.pid + '" Position="' + passage.position +'">');
+    result.push(styles);
+    result.push('<String>' + scrubbedNameOrPid + '</String>');
 		//Push the link list.  This no longer needs a whole function.
     result.push('<ConnectedNoteIDs>' + links.join(", ") + '</ConnectedNoteIDs>');
     result.push('<PointsToNoteIDs>' + links.join(", ") + '</PointsToNoteIDs>');
@@ -247,7 +257,8 @@ context.graph = (function() {
 	}
 
 	function stylePassage(passage, label) {
-		var styles = [];
+		var weight = 1;
+		var color;
 
 		var hue = 0;
 		var pid = passage.pid;
@@ -256,62 +267,61 @@ context.graph = (function() {
 
 		//Start with any special shape for the passage.
 		if (passage.trace) {
-			styles.push("shape=hexagon");
-		} else if (pid == storyObj.startNode || _.find(storyObj.unreachable, function(str){return str == passage.name;})) {
-			styles.push("shape=doublecircle");
-		} else if (config.ends && context.passage.hasTag(passage, config.endTag)) {
-			styles.push("shape=egg");
-		} else if (config.checkpoints && context.passage.hasTag(passage, config.checkpointTag)) {
-			styles.push("shape=diamond");
+			weight++;
 		}
 
-		//Add fill and bold styles.
-		if (styles.length === 0 && passage.links.length === 0  && config.ends) {
-			//We are at a terminal passage that isn't already styled as the start or an end.
-			styles.push("style=\"filled,diagonals\"");
-		} else if (styles.length) {
-			styles.push("style=\"filled,bold\"");
-		}	else if (config.color != "bw") {
-			styles.push("style=filled");
+		if (pid == storyObj.startNode || _.find(storyObj.unreachable, function(str){return str == passage.name;})) {
+			weight++;
 		}
-		
+
+		if (config.ends && context.passage.hasTag(passage, config.endTag)) {
+			weight++;
+		}
+
+		if (config.checkpoints && context.passage.hasTag(passage, config.checkpointTag)) {
+			//really needs a shape (was diamond)
+		}
+
+		//Omitting fill and bold styles, but weigh one case.
+		if (weight == 1 && passage.links.length === 0  && config.ends) {
+			//We are at a terminal passage that isn't already styled as the start or an end.
+			weight++;
+		}
+
 		//Calculate color.
-		if (config.color == "length") {
-			hue = Math.round(100 * (Math.min(1.75, passage.textLength / storyObj.avLength)) / 3)/100;  //HSV red-to-green range
-			styles.push("fillcolor=\"" + hue + ",0.66,0.85\"");
+		if (passage.trace) {
+			color = "0.5 0.5 1";
+		}	else if (config.color == "bw") {
+			color = "1 1 1";
+		} else if (config.color == "length") {
+			hue = Math.round(100 * (Math.min(1.75, passage.textLength / storyObj.avLength)) / 3)/100;
+			hue = Math.min(hue,1);
+			color = (1 - hue) + " " + hue + " 0.1";
 		} else if (config.color == "tag" && tag) {
 			var indx = storyObj.tags.indexOf(tag);
 			if (indx > -1)
 				hue = config.palette[indx%26]; //color alphabet colors
-			styles.push("fillcolor=\"" + hue + "\"");
+			color = convertHexColor(hue);
 		} else if (pid == storyObj.startNode) {
-			styles.push("fillcolor=\"" + config.paletteExceptions.start + "\"");
+			color = convertHexColor(config.paletteExceptions.start);
 		} else if (config.ends && context.passage.hasTag(passage, config.endTag)) {
-			styles.push("fillcolor=\"" + config.paletteExceptions.ends + "\"");
+			color = convertHexColor(config.paletteExceptions.ends);
 		} else if (_.find(storyObj.unreachable, function(str){return str == passage.name;})) {
-			styles.push("fillcolor=\"" + config.paletteExceptions.unreachable + "\"");
+			color = convertHexColor(config.paletteExceptions.unreachable);
  		} else if (config.color == "tag") {
-			styles.push("fillcolor=\"" + config.paletteExceptions.untagged + "\"");
+			color = convertHexColor(config.paletteExceptions.untagged);
  		} else {
-			styles.push("fillcolor=\"" + config.paletteExceptions.default + "\"");
+			color = convertHexColor(config.paletteExceptions.default);
 		}
 
-		//Rename the node if a label was passed in.
-		if (label)
-			styles.push("label=\"" + label + "\"");
-		
-		//Add a tooltip.
-		styles.push("tooltip=" + getNameOrPid(passage, true, true));
-		return styles;
+		return getAppearanceString(color,weight);
 	}
 
 	function scrub(name) {
 		//Put names into a legal dot format.
 		if (name) {
-			// dangerously scrubbing non-ascii characters for graphviz bug
-			name = name.replace(/"/gm,"\\\"").replace(/[^\x00-\x7F]/g, "");
-			// add literal quotes for names in all cases.
-			name = '"' + name + '"';
+			// scrub for xml insertion
+			name = _.escape(name);
 		}
 		return name;
 	}
@@ -580,20 +590,20 @@ context.settings = (function () {
 			
 	function write() {
 		//Write the current config object as a settings panel.
-		var output = _.template('X: <input type="radio" id="nodeCheckbox0" name="nodeCheckbox" value="names" <%= (showNodeNames ? "checked" : "") %>/><label for="nodeCheckbox">&nbsp;Passage titles</label> \
-			<input type="radio" id="nodeCheckbox1" name="nodeCheckbox" value="pid"  <%= (showNodeNames ? "" : "checked") %> /><label for="nodeCheckbox">&nbsp;Passage ids (hover for title)</label> \
-			&nbsp; X: <input type="radio" id="colorCheckbox0" name="colorCheckbox" value="bw" <%= (color == "bw" ? "checked" : "")%> />&nbsp;<label for="colorCheckbox0">Black & white</label> \
+		var output = _.template('<input type="radio" id="nodeCheckbox0" name="nodeCheckbox" value="names" <%= (showNodeNames ? "checked" : "") %>/><label for="nodeCheckbox">&nbsp;Passage titles</label> \
+			<input type="radio" id="nodeCheckbox1" name="nodeCheckbox" value="pid"  <%= (showNodeNames ? "" : "checked") %> /><label for="nodeCheckbox">&nbsp;Passage ids</label><br/> \
+			<input type="radio" id="colorCheckbox0" name="colorCheckbox" value="bw" <%= (color == "bw" ? "checked" : "")%> />&nbsp;<label for="colorCheckbox0">Black & white</label> \
 			<input type="radio" id="colorCheckbox1" name="colorCheckbox" value="length" <%= (color == "length" ? "checked" : "")%> />&nbsp;<label for="colorCheckbox1">Color by node length</label> \
 			<input type="radio" id="colorCheckbox2" name="colorCheckbox" value="tag" <%= (color == "tag" ? "checked" : "")%>/>&nbsp;<label for="colorCheckbox2">Color by tag</label><br/> \
 			<input type="checkbox" id="displayCheckbox" name="displayCheckbox" checked/>&nbsp;<label for="displayCheckbox">Include display macro links</label> \
-			X: <input type="checkbox" id="wcCheckbox" name="wcCheckbox" <%= (countWords ? "checked" : "") %> />&nbsp;<label for="wcCheckbox">Include word counts (hover)</label><br/> \
+			<!-- <input type="checkbox" id="wcCheckbox" name="wcCheckbox" <%= (countWords ? "checked" : "") %> />&nbsp;<label for="wcCheckbox">Include word counts</label> --><br/> \
 			<input type="checkbox" id="specialCheckbox" <%= (omitSpecialPassages ? "checked" : "") %> />&nbsp;<label for="specialCheckbox">Omit&nbsp;special&nbsp;passages</label> (StoryAuthor,&nbsp;StorySubtitle,&nbsp;etc.)<br/> \
 			<input type="radio" id="omitTagsFakeRadioButton" disabled/>&nbsp;<label for="omitTags">Omit by tag(s):</label>&nbsp;<input type="input" id="omitTags" placeholder="Separate tags with commas." value="<%=omitTags.join(" ")%>"/><br/> \
-			X: <input type="checkbox" id="checkpointsCheckbox" <%= (checkpoint ? "checked" : "") %> />&nbsp;<label for="checkpointsCheckbox">Detect checkpoint tags</label> \
-			X: <input type="checkbox" id="endsCheckbox" <%= (ends == true ? "checked" : "") %>/>&nbsp;<label for="endsCheckbox">Detect end tags</label> \
+			<input type="checkbox" id="checkpointsCheckbox" <%= (checkpoint ? "checked" : "") %> />&nbsp;<label for="checkpointsCheckbox">Detect checkpoint tags</label> \
+			<input type="checkbox" id="endsCheckbox" <%= (ends == true ? "checked" : "") %>/>&nbsp;<label for="endsCheckbox">Detect end tags</label> \
 			<input type="checkbox" id="lastTagCheckbox" <%= (lastTag ? "checked" : "") %> />&nbsp;<label for="lastTagCheckbox">Use last tag</label><br/> \
-			X: <input type="checkbox" id="clusterCheckbox" <%= (cluster ? "checked" : "") %> />&nbsp;<label for="clusterCheckbox">Cluster by tags</label> \
-			X: <input type="radio" id="traceFakeRadioButton" disabled/>&nbsp;<label for="trace">Trace phrase:</label>&nbsp;<input type="input" id="trace" value="<%=trace%>" /><br/> \
+			<!-- <input type="checkbox" id="clusterCheckbox" <%= (cluster ? "checked" : "") %> />&nbsp;<label for="clusterCheckbox">Cluster by tags</label> --> \
+			<input type="radio" id="traceFakeRadioButton" disabled/>&nbsp;<label for="trace">Trace phrase:</label>&nbsp;<input type="input" id="trace" value="<%=trace%>" /><br/> \
 			<br/>');
 		document.getElementById("settingsForm").innerHTML = output(config);
 	}
@@ -711,6 +721,8 @@ context.story = (function () {
 		storyObj.unreachable = _.difference(_.pluck(storyObj.passages,"name"),storyObj.reachable);
 		storyObj.maxLength = storyObj.passages.reduce(function(acc,pasg) { return Math.max(acc,pasg.textLength); }, 1);
 		storyObj.avLength = storyObj.passages.reduce(function(acc,pasg) { return acc + pasg.textLength; }, 0) / storyObj.passages.length;
+
+console.log(storyObj.avLength);
 
 		writeStats();
 	}
