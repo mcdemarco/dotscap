@@ -232,7 +232,7 @@ context.graph = (function() {
 		var links = _.uniq(passage.links.map(function(link) {return getPidFromTarget(link[0]);}));
 		
 		//Push the node.
-		result.push('<Note Width="' + (passage.name.length * 11) + '" FontSize="16" ID="' + passage.pid + '" Position="' + passage.position +'">');
+		result.push('<Note Width="' + (passage.name.length * 8 + 20) + '" FontSize="16" ID="' + passage.pid + '" Position="' + passage.position +'">');
     result.push(getAppearanceString());
     result.push('<String>' + passage.name + '</String>');
 		//Push the link list.  This no longer needs a whole function.
@@ -544,7 +544,7 @@ context.settings = (function () {
 		else 
 			StorySettings = window.document.querySelector('tw-passagedata[name="StorySettings"]');
 
-		if (!StorySettings)
+		if (!StorySettings || !StorySettings.innerText || !StorySettings.innerText.split("dotgraph:").length > 0)
 			return;
 
 		var dgSettings = (StorySettings.innerText.split("dotgraph:")[1]).split("\n")[0];
